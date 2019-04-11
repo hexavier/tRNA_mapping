@@ -1,0 +1,19 @@
+
+for n in $(ls ${workDir}/mapping/*/*filtered.fastq.gz)
+do
+    bn=$(basename $n _filtered.fastq.gz)
+    cd ${workDir}/postprocessing/${bn}
+
+    ## Allele-specific expression analysis
+    $samtools idxstats ${bn}.realigned.bam > ${bn}.allreads.expression.txt
+
+    ## Compute expression
+    python ${scriptDir}/compute_expression.py ${bn}.allreads.expression.txt ${bn}.ASE.csv ${genomeDir}/${tRNAName}_clusterInfo.fa ${genomeDir}/tRNAs.txt ${bn}.RPM.allreads.csv
+
+    ## Stats
+    $samtools stats ${bn}.realigned.bam | grep ^RL | cut -f 2- > ${bn}.readlengths.allreads.txt
+    $samtools depth ${bn}.realigned.bam > ${bn}.depth.allreads.txt
+
+done
+python ${scriptDir}/extract_data_allreads.py ${ngsDir}/metadata.txt
+qsub -V -cwd -l h_rt=96:00:00 -q long-sl7 /users/lserrano/xhernandez/tRNA_mapping/script_read_stats_allreads.sh ${dataset}
