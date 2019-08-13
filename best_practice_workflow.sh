@@ -5,11 +5,11 @@ cwd=$(pwd)
 # set to uniq for only uniq mapped reads
 # set to phased for only phased mapped reads
 # set to all for all reads
-multimapperHandling="uniq"
+multimapperHandling="quant"
 
 
 #change here your directory paths
-dataset="TCGA_BLCA"
+dataset="hydroseq_50SE_test"
 ngsDir="${cwd}/Data/NGS/${dataset}"
 scriptDir="${cwd}"
 genomeDir="${cwd}/Data/Genomes/H.sapiens"
@@ -124,13 +124,9 @@ done
 mkdir -p ${workDir}/mapping
 cd ${workDir}/mapping
 
-for n in $(ls ${ngsDir}/*/*trimmed.fastq.gz)
-do
-    bn=$(basename $n _trimmed.fastq.gz)
-    mkdir ${workDir}/mapping/${bn}
-    cd ${workDir}/mapping/${bn}
-    qsub -V -cwd -l virtual_free=60G,h_rt=48:00:00 -q long-sl7 ${scriptDir}/script_mapping_artificial.sh $n ${dataset}
-done
+# create array file
+ls ${ngsDir}/*/*trimmed.fastq.gz | wc -l
+qsub array_mapping.q
 
 
 ###post-processing
@@ -143,10 +139,11 @@ do
     mkdir ${workDir}/postprocessing/${bn}
     cd ${workDir}/postprocessing/${bn}
 
-    qsub -V -cwd ${scriptDir}/script_postprocessing.sh $n
+    qsub -V -cwd ${scriptDir}/script_postprocessing.sh $n ${multimapperHandling}
 done
 
 cd ${workDir}/postprocessing
 python ${scriptDir}/extract_data.py ${ngsDir}/metadata.txt
+python ${scriptDir}/extract_modifications.py ${ngsDir}/metadata.txt
 #python ${scriptDir}/reads_stats.py ${genomeDir}/${tRNAName}_clusterInfo.fa ${genomeDir}/tRNAs.txt results_nomod.csv ${ngsDir}/metadata.txt
 qsub -V -cwd -l h_rt=96:00:00 -q long-sl7 /users/lserrano/xhernandez/tRNA_mapping/script_read_stats.sh ${dataset}

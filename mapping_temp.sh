@@ -15,28 +15,19 @@ workDir="${cwd}/Analysis/${dataset}"
 genomeName="hg38.genomic"
 tRNAName="hg38.tRNAscan"
 
+###pre-mapping against artificial genome
 bn=$(basename $n _trimmed.fastq.gz)
-mkdir ${workDir}/mapping/${bn}
-cd ${workDir}/mapping/${bn}
 
 # COpy needed files on local node
-cp ${genomeDir}/{${genomeName}_artificial.idx,${genomeName}_artificial.fa,${tRNAName}_pre-tRNAs.fa,${tRNAName}_pre-tRNAs.bed12} $TMPDIR
+cp ${genomeDir}/{${tRNAName}_pre-tRNAs.fa,${tRNAName}_pre-tRNAs.bed12} $TMPDIR
 cp $n $TMPDIR
 cp ${scriptDir}/{removeGenomeMapper.pl,removePrecursor.pl} $TMPDIR
+cp ${workDir}/mapping/${bn}/${bn}.sam $TMPDIR
 
 cd $TMPDIR
 
-###pre-mapping against artificial genome
-$segemehl --evalue 500 --differences 3 --maxinterval 1000 --accuracy 80 --index $TMPDIR/${genomeName}_artificial.idx --database $TMPDIR/${genomeName}_artificial.fa --nomatchfilename $TMPDIR/${bn}_unmatched.fastq --query $TMPDIR/${bn}_trimmed.fastq.gz -o $TMPDIR/${bn}.sam
-gzip $TMPDIR/${bn}_unmatched.fastq
-# Copy results
-cp $TMPDIR/{${bn}.sam,${bn}_unmatched.fastq.gz} ${workDir}/mapping/${bn}
-rm $TMPDIR/{${bn}_unmatched.fastq.gz,${genomeName}_artificial.idx,${genomeName}_artificial.fa}
-
 ##remove all reads mapping at least once to the genome
 perl $TMPDIR/removeGenomeMapper.pl $TMPDIR/${tRNAName}_pre-tRNAs.fa $TMPDIR/${bn}.sam $TMPDIR/${bn}_filtered.sam
-# Copy results
-rm $TMPDIR/${bn}.sam
 
 ##remove pre-tRNA reads, keep only mature tRNA reads
 perl $TMPDIR/removePrecursor.pl  $TMPDIR/${tRNAName}_pre-tRNAs.bed12 $TMPDIR/${bn}_filtered.sam $TMPDIR/${bn}_trimmed.fastq.gz > $TMPDIR/${bn}_filtered.fastq

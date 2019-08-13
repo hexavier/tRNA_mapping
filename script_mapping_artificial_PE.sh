@@ -28,16 +28,23 @@ cd $TMPDIR
 ###pre-mapping against artificial genome
 $segemehl --evalue 500 --differences 3 --maxinterval 1000 --accuracy 80 --index $TMPDIR/${genomeName}_artificial.idx --database $TMPDIR/${genomeName}_artificial.fa --nomatchfilename $TMPDIR/${bn}_unmatched.fastq --query $TMPDIR/${bn}_read1_trimmed.fastq.gz --mate $TMPDIR/${bn}_read2_trimmed.fastq.gz -o $TMPDIR/${bn}.sam
 gzip $TMPDIR/${bn}_unmatched.fastq
+# Copy results
+cp $TMPDIR/{${bn}.sam,${bn}_unmatched.fastq.gz} ${workDir}/mapping/${bn}
+rm $TMPDIR/{${bn}_unmatched.fastq.gz,${genomeName}_artificial.idx,${genomeName}_artificial.fa}
 
 ##remove all reads mapping at least once to the genome
 perl $TMPDIR/removeGenomeMapper.pl $TMPDIR/${tRNAName}_pre-tRNAs.fa $TMPDIR/${bn}.sam $TMPDIR/${bn}_filtered.sam
+# Copy results
+rm $TMPDIR/${bn}.sam
 
 ##remove pre-tRNA reads, keep only mature tRNA reads
 zcat $TMPDIR/${bn}_read1_trimmed.fastq.gz > $TMPDIR/${bn}_trimmed.fastq
 zcat $TMPDIR/${bn}_read2_trimmed.fastq.gz >> $TMPDIR/${bn}_trimmed.fastq
+rm $TMPDIR/{${bn}_read1_trimmed.fastq.gz,${bn}_read2_trimmed.fastq.gz}
 gzip $TMPDIR/${bn}_trimmed.fastq
+
 perl $TMPDIR/removePrecursor.pl  $TMPDIR/${tRNAName}_pre-tRNAs.bed12 $TMPDIR/${bn}_filtered.sam $TMPDIR/${bn}_trimmed.fastq.gz > $TMPDIR/${bn}_filtered.fastq
 gzip $TMPDIR/${bn}_filtered.fastq
 
 # Copy results from local node to cwd
-cp $TMPDIR/{${bn}.sam,${bn}_filtered.sam,${bn}_unmatched.fastq.gz,${bn}_filtered.fastq.gz} ${workDir}/mapping/${bn}
+cp $TMPDIR/{${bn}_filtered.sam,${bn}_filtered.fastq.gz} ${workDir}/mapping/${bn}

@@ -8,7 +8,7 @@ dataset=$2
 # set to uniq for only uniq mapped reads
 # set to phased for only phased mapped reads
 # set to all for all reads
-multimapperHandling="uniq"
+multimapperHandling=$3
 
 # directory paths and names
 cwd="/users/lserrano/xhernandez/tRNA_mapping"
@@ -73,6 +73,11 @@ rm -f ${bn}.temp.intervals
 ##filter multimapped reads
 if [ "$multimapperHandling" == "uniq" ]; then
   $samtools view -h ${bn}.realigned.bam | grep -P 'NH:i:1\D'\|'^@' | $samtools view -bS | $samtools sort -T ${bn} -o ${bn}.mmHandled.bam
+elif [ "$multimapperHandling" == "quant" ]; then
+  $samtools sort -n -T ${bn} -O sam ${bn}.realigned.bam  > ${bn}.nSorted.sam
+  python ${scriptDir}/distribute_reads.py ${bn}.nSorted.sam ${genomeDir}/${tRNAName}_clusterInfo.fa ${bn}.nSorted.quant.sam ${bn}.nSorted.multimappers.sam
+  $samtools view -bS ${bn}.nSorted.quant.sam | samtools sort -T ${bn} -o ${bn}.mmHandled.quant.bam
+  $samtools view -h ${bn}.realigned.bam | grep -P 'NH:i:1\D'\|'^@' | $samtools view -bS | $samtools sort -T ${bn} -o ${bn}.mmHandled.bam
 elif [ "$multimapperHandling" == "phased" ]; then
   $samtools sort -n -T ${bn} -O sam ${bn}.realigned.bam  > ${bn}.nSorted.sam
   perl ${scriptDir}/multimapperPhasing.pl -ed 0 -id 0 -verbose 0 -sam ${bn}.nSorted.sam -out ${bn}.nSorted.phased.sam
@@ -93,12 +98,12 @@ $gatk -R ${genomeDir}/${tRNAName}_cluster.fa -T UnifiedGenotyper -I ${bn}.mmHand
 grep -i -v lowqual ${bn}.GATK.vcf > ${bn}.GATK_filtered.vcf
     
 ## Allele-specific expression analysis
-$samtools idxstats ${bn}.mmHandled.bam > ${bn}.expression.txt
+$samtools idxstats ${bn}.mmHandled.quant.bam > ${bn}.expression.txt
 $gatk -R ${genomeDir}/${tRNAName}_cluster.fa -T ASEReadCounter -I ${bn}.mmHandled.bam -o ${bn}.ASE.csv -sites ${bn}.GATK_filtered.vcf
 
 ## Compute expression
 python ${scriptDir}/compute_expression.py ${bn}.expression.txt ${bn}.ASE.csv ${genomeDir}/${tRNAName}_clusterInfo.fa ${genomeDir}/tRNAs.txt ${bn}.RPM.csv
 
 ## Stats
-$samtools stats ${bn}.mmHandled.bam | grep ^RL | cut -f 2- > ${bn}.readlengths.txt
-$samtools depth ${bn}.mmHandled.bam > ${bn}.depth.txt
+$samtools stats ${bn}.mmHandled.quant.bam | grep ^RL | cut -f 2- > ${bn}.readlengths.txt
+$samtools depth ${bn}.mmHandled.quant.bam > ${bn}.depth.txt

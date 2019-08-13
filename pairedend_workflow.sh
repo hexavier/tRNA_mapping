@@ -5,7 +5,7 @@ cwd=$(pwd)
 # set to uniq for only uniq mapped reads
 # set to phased for only phased mapped reads
 # set to all for all reads
-multimapperHandling="uniq"
+multimapperHandling="quant"
 
 
 #change here your directory paths
@@ -131,7 +131,7 @@ do
     bn=$(basename $n _read1_trimmed.fastq.gz)
     mkdir ${workDir}/mapping/${bn}
     cd ${workDir}/mapping/${bn}
-    qsub -V -cwd -l virtual_free=60G,h_rt=48:00:00 -q long-sl7 ${scriptDir}/script_mapping_artificial_PE.sh $n ${dataset}
+    qsub -V -cwd -l virtual_free=60G,h_rt=48:00:00 -q long-sl7,mem_256,mem_512 ${scriptDir}/script_mapping_artificial_PE.sh $n ${dataset}
 done
 
 
@@ -145,7 +145,7 @@ do
     mkdir ${workDir}/postprocessing/${bn}
     cd ${workDir}/postprocessing/${bn}
 
-    qsub -V -cwd ${scriptDir}/script_postprocessing.sh $n
+    qsub -V -cwd ${scriptDir}/script_postprocessing.sh $n ${multimapperHandling}
 done
 
 cd ${workDir}/postprocessing

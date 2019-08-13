@@ -7,7 +7,7 @@ import numpy as np
 
 # Load datasets
 ids = [ name for name in os.listdir(".") if os.path.isdir(name) ]
-ids_decap = [s[:34] for s in ids]
+ids_decap = [s[:-1] if s[-6:] in ["mirnaA","mirnaB"] else s for s in ids]
 
 # Map samples
 metadata = pd.read_csv(sys.argv[1]).loc[:,["ID","Source"]]

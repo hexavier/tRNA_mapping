@@ -68,8 +68,7 @@ mapping = {re.findall("cluster[0-9]+",s)[0]: re.findall("(?<=-)i?[A-Z]{1}[a-zC]+
 
 # Load datasets
 ids = [ name for name in os.listdir(".") if os.path.isdir(name) ]
-ids_decap = [s[:34] for s in ids]
-
+ids_decap = [s[:-1] if s[-6:] in ["mirnaA","mirnaB"] else s for s in ids]
 
 #%% Map samples
 metadata = pd.read_csv(sys.argv[4]).loc[:,["ID","Source"]]
@@ -81,7 +80,7 @@ id_names = list(set([s1+"-"+s2 if sum([s2 in n for n in ids])==1 else s1+"-"+s2+
 id_names.extend([s[:-1]+"2" for s in id_names if s[-7:]=="_mirna1"])
 
 # Initialize dataframe
-rlen = pd.DataFrame(columns=id_names, index=list(range(1,(max([len(s) for s in seqs])+1))))
+rlen = pd.DataFrame(columns=id_names, index=list(range(1,101)))
 cov = pd.DataFrame(columns=id_names, index=trnas)
 depth = pd.DataFrame(columns=id_names, index=trnas)
 
